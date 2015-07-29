@@ -7,6 +7,7 @@ SEARCHING, DRIVING = range(2)
 movement = []
 MARKER_TYPE = 0
 ZONES = {0: [0,27], 1:[6,7], 2: [13,14], 3: [20,21]}
+my_tokens = []
 
 R = Robot()
 
@@ -15,8 +16,13 @@ token_filter_g = lambda m: m.info.marker_type == "token_gold"
 token_filter_s = lambda m: m.info.marker_type == "token_silver"
 arena_filter = lambda m: m.info.marker_type in (MARKER_ARENA)
 home_filter = lambda m: m.info.code in ZONES[R.zone]
+my_token_filters = None
 
-
+def refreshFilter(code):
+	global my_token_filters
+	global my_tokens
+	my_tokens.append(code)
+	my_token_filters = lambda m: m.info.code not in my_tokens
 
 def drive(speed, seconds):
 	R.motors[0].m0.power = speed
@@ -32,14 +38,22 @@ def turn(speed, seconds):
 	R.motors[0].m0.power = 0
 	R.motors[0].m1.power = 0
 
-def getMarkers():
-	print MARKER_TYPE
-	if MARKER_TYPE == 0:
+def getMarkers(all=False):
+	if MARKER_TYPE == 0 or all:
 		return filter(token_filter, R.see())
 	if MARKER_TYPE == "token_silver":
-		return filter(token_filter_s, R.see())
+		return filter(my_token_filters,filter(token_filter_s, R.see()))
 	elif MARKER_TYPE == "token_gold":
-		return filter(token_filter_g, R.see())
+		return filter(my_token_filters,filter(token_filter_g, R.see()))
+		
+def getInvMarkers():
+	if MARKER_TYPE == "token_silver":
+		return filter(my_token_filters,filter(token_filter_g, R.see()))
+	elif MARKER_TYPE == "token_gold":
+		return filter(my_token_filters,filter(token_filter_s, R.see()))
+
+def correct(mtype):
+		return mtype == MARKER_TYPE
 		
 def getHomeMarkers():
 	return nearestMarker(filter(home_filter,filter(arena_filter, R.see())))
@@ -102,21 +116,24 @@ def collect():
 	Now token is in range pick it up
 	'''
 	global MARKER_TYPE
-	MARKER_TYPE = rotateToNearest(5,0.01,04.05).info.marker_type
+	tmp = rotateToNearest(5,0.01,04.05)
+	MARKER_TYPE = tmp.info.marker_type
 	print "Looking for", MARKER_TYPE
 	drive(100,0.1)
+	refreshFilter(tmp.info.code)
+	return tmp
 	
 def rotateToHome():
 	while True:
 		try:
 			home_marker = getHomeMarkers()
-			rotateToHomeMarker(25,0.01,10)
+			rotateToHomeMarker(25,0.01,1)
 			break
 		except ValueError:
 			turn(25,0.1)
 
 def go():
-	print "here"
+	print "New loop"
 	tmp = True
 	i = 0
 	while tmp:
@@ -125,17 +142,39 @@ def go():
 				print "Found"
 				rotateToNearest(25,0.01,0.5)
 				print "F to",nearestMarker(getMarkers()).info.code, " - Distance", nearestMarker(getMarkers()).dist
+				near = nearestMarker(getMarkers(True))
+				if not correct(near.info.marker_type) and near.dist < 0.4:
+					#STOP!!!!
+					print "Wrong type - run away"
+					turn(50,0.2)
+					break
+				else:
+					print near.info.marker_type, near.dist
 				drive(100,0.5)
 				tmp = False
 				print "Found marker"
 			collect()
-			print movement
 			print "Going Home"
 			rotateToHome()
 			#while bumper not pressed
-			drive(100,2)
-			print ">>>>>>>>>>I am home"
-			drive(-100,0.2)
+			home = nearestMarker(getHomeMarkers())
+			print home.dist
+			while home.dist > 0.5:
+				try:
+					tmp = nearestMarker(getInvMarkers())
+					if not correct(tmp.info.marker_type) and tmp.dist < 0.4:
+						#STOP!!!!
+						print "Wrong type - run away"
+						turn(50,0.2)
+						continue
+				except:
+					#Nothing in front
+					print home.dist
+					drive(100,0.01)
+					home = nearestMarker(getHomeMarkers())
+					continue
+			
+			
 		except:
 			print "Cant find anything" , i
 			i+=1
@@ -145,11 +184,13 @@ def go():
 				break
 			turn(25,random())
 			continue
-	
-	
+		
+
 	
 while True:
 	go()
+	print ">>>>>>>>>>I am home"
+	drive(-100,0.5)
 
 print "END"	
 exit()
