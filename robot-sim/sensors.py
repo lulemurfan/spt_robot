@@ -48,8 +48,8 @@ class Sensors(object):
 
         output = ""
         output += "LightSensor: {} ({}) - ".format(self.lightSensor.isBroken(),self.lightSensor.getReading())
-        output += "RightBump: {} ({}) - ".format(self.rightBump.isBumped(),self.rightBump.getReading())
-        output += "LeftBump: {} ({})".format(self.leftBump.isBumped(),self.leftBump.getReading())
+        output += "RightBump: {} ({}) - ".format(self.rightBump.isBump(),self.rightBump.getReading())
+        output += "LeftBump: {} ({})".format(self.leftBump.isBump(),self.leftBump.getReading())
         return output
 
 def test():
