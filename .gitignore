@@ -1,0 +1,7 @@
+#virtual environemnt
+venv
+
+Portable Python
+
+#Compiled Python
+**/*.pyc
