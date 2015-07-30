@@ -1,3 +1,6 @@
+##INPUT 0 IR
+
+
 from sr.robot import *
 from random import random
 
@@ -48,9 +51,9 @@ def getMarkers(all=False):
 		
 def getInvMarkers():
 	if MARKER_TYPE == "token_silver":
-		return filter(my_token_filters,filter(token_filter_g, R.see()))
+		return filter(token_filter_g, R.see())
 	elif MARKER_TYPE == "token_gold":
-		return filter(my_token_filters,filter(token_filter_s, R.see()))
+		return filter(token_filter_s, R.see())
 
 def correct(mtype):
 		return mtype == MARKER_TYPE
@@ -83,31 +86,33 @@ def nearestMarker(markers):
 
 
 def rotateToNearest(speed,sec,err):
+	print "Rotate to Nearest"
 	m = getMarkers()
 	if nearestMarker(m).centre.polar.rot_y > err:
 		while (nearestMarker(m).centre.polar.rot_y > err):
 			m = getMarkers()
-			print nearestMarker(m).centre.polar.rot_y
+			print nearestMarker(m).centre.polar.rot_y, "turning towards", nearestMarker(m).info.code
 			turn(speed,sec)
 	elif nearestMarker(m).centre.polar.rot_y < -err:
 		while (nearestMarker(m).centre.polar.rot_y < -err):
 			m = getMarkers()
-			print nearestMarker(m).centre.polar.rot_y
+			print nearestMarker(m).centre.polar.rot_y, "turning towards", nearestMarker(m).info.code
 			turn(-speed,sec)
 	return nearestMarker(m)
 	
 def rotateToHomeMarker(speed,sec,err):
+	print "Rotate to home marker"
 	m = getHomeMarkers()
 	print nearestMarker(m)
 	if nearestMarker(m).centre.polar.rot_y > err:
 		while (nearestMarker(m).centre.polar.rot_y > err):
 			m = getHomeMarkers()
-			print nearestMarker(m).centre.polar.rot_y
+			print nearestMarker(m).centre.polar.rot_y, "turning towards", nearestMarker(m).info.code, " - HOME"
 			turn(speed,sec)
 	elif nearestMarker(m).centre.polar.rot_y < -err:
 		while (nearestMarker(m).centre.polar.rot_y < -err):
 			m = getHomeMarkers()
-			print nearestMarker(m).centre.polar.rot_y
+			print nearestMarker(m).centre.polar.rot_y, "turning towards", nearestMarker(m).info.code, " - HOME"
 			turn(-speed,sec)
 	return nearestMarker(m)
 
@@ -116,7 +121,7 @@ def collect():
 	Now token is in range pick it up
 	'''
 	global MARKER_TYPE
-	tmp = rotateToNearest(5,0.01,04.05)
+	tmp = rotateToNearest(5,0.01,0.05)
 	MARKER_TYPE = tmp.info.marker_type
 	print "Looking for", MARKER_TYPE
 	drive(100,0.1)
@@ -127,7 +132,7 @@ def rotateToHome():
 	while True:
 		try:
 			home_marker = getHomeMarkers()
-			rotateToHomeMarker(25,0.01,1)
+			rotateToHomeMarker(25,0.01,0.1)
 			break
 		except ValueError:
 			turn(25,0.1)
@@ -143,13 +148,13 @@ def go():
 				rotateToNearest(25,0.01,0.5)
 				print "F to",nearestMarker(getMarkers()).info.code, " - Distance", nearestMarker(getMarkers()).dist
 				near = nearestMarker(getMarkers(True))
-				if not correct(near.info.marker_type) and near.dist < 0.4:
+				if not correct(near.info.marker_type) and near.dist < 0.5:
 					#STOP!!!!
 					print "Wrong type - run away"
 					turn(50,0.2)
 					break
 				else:
-					print near.info.marker_type, near.dist
+					print "It's ok", near.info.marker_type, near.dist
 				drive(100,0.5)
 				tmp = False
 				print "Found marker"
@@ -158,27 +163,31 @@ def go():
 			rotateToHome()
 			#while bumper not pressed
 			home = nearestMarker(getHomeMarkers())
-			print home.dist
-			while home.dist > 0.5:
+			print "I am", home.dist, "away from home heading for", home.info.code
+			while home.dist > 0.2: # WHILE BUMPER NOT PRESS HERE
 				try:
 					tmp = nearestMarker(getInvMarkers())
-					if not correct(tmp.info.marker_type) and tmp.dist < 0.4:
+					if (not correct(tmp.info.marker_type)) and tmp.dist < 0.4:
 						#STOP!!!!
-						print "Wrong type - run away"
+						print "Wrong type - run away", 
 						turn(50,0.2)
 						continue
+					else:
+						print "It's ok", tmp.info.marker_type, tmp.dist
+						break
 				except:
 					#Nothing in front
-					print home.dist
+					print "F to home, I am", home.dist, "away from", home.info.code
 					drive(100,0.01)
 					home = nearestMarker(getHomeMarkers())
-					continue
-			
-			
+					#continue
+					if home.dist<0.4:
+						tmp = False
+						break
 		except:
 			print "Cant find anything" , i
 			i+=1
-			if i > 10:
+			if i > 5:
 				print "I'm bored I'm going for it"
 				drive(100,2)
 				break
