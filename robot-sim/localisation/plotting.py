@@ -73,14 +73,9 @@ class Plotting(object):
 
         plotMap += [['_'] * (width + 1)]
 
-        print(len(self.items))
-
         for item in self.items:
-            # print(width,item.x,self.xMax)
-            # print(height,item.y,self.yMax)
             line = int(height * (self.yMax - item.y) / self.yMax )
             char = int(width * (item.x / self.xMax))
-            print(line,char)
             plotMap[line][char] = item.marker
 
         for line in plotMap:
