@@ -4,8 +4,13 @@ from sr.robot import *
 R = Robot()
 
 def drive(speed, seconds):
-    R.motors[0].m0.power = speed
-    R.motors[0].m1.power = speed
+
+    steps = 10
+    for tick in range(steps):
+        R.motors[0].m0.power = float( tick * speed ) / steps
+        R.motors[0].m1.power = float( tick * speed ) / steps
+        time.sleep(1.0/steps)
+
     time.sleep(seconds)
     R.motors[0].m0.power = 0
     R.motors[0].m1.power = 0
@@ -39,9 +44,11 @@ def testTurn():
         for seconds in [1,2,4,8]:
             print("Testing turning at speed {} for {} seconds".format(speed,seconds))
             drive(speed, seconds)
-            time.sleep(2)
+            time.sleep(10)
             drive(-speed, seconds)
-            time.sleep(1)
+            time.sleep(5)
 
 testDrive()
+print "Sleeping for 20 seconds before turn test"
+print "=" * 80
 testTurn()

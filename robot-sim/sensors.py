@@ -27,7 +27,7 @@ class BumpSensor(Sensor):
 class LightSensor(Sensor):
     "Class to deal with light sensors"
     def isBroken(self):
-        return (self.getReading() < 2)
+        return (self.getReading() > 2.84)
 
 
 
@@ -52,6 +52,14 @@ class Sensors(object):
         return output
 
 sensors = Sensors(R)
+
+# t check if if lishg sensor browken
+sensors.lightSensor.isBroken()
+
+#check if bump switch hit
+sensors.rightBump.isBump()
+
 while True:
     print(sensors)
+
     time.sleep(0.2)
